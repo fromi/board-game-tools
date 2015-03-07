@@ -1,11 +1,16 @@
 package com.github.fromi.boardgametools.event;
 
+import org.springframework.data.annotation.Transient;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 public class Dispatcher implements Observable {
+    @Transient
     private final List<Observer> observers = new ArrayList<>();
 
     @Override
@@ -31,13 +36,16 @@ public class Dispatcher implements Observable {
         observers.forEach(observer -> observer.observe(event));
     }
 
+    @Transient
     private final List<Observable> propagatedObservables = new ArrayList<>();
 
     protected void propagate(Observable... observables) {
-        for (Observable observable : observables) {
-            propagatedObservables.add(observable);
-            observers.forEach(observable::observe);
-        }
+        propagate(Arrays.asList(observables));
+    }
+
+    protected void propagate(Collection<? extends Observable> observables) {
+        propagatedObservables.addAll(observables);
+        observables.forEach(observable -> observers.forEach(observer -> observer.observe(observable)));
     }
 
     private static class Observer {
