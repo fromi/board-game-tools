@@ -33,7 +33,7 @@ public class Dispatcher implements Observable {
     }
 
     protected void dispatch(Object event) {
-        observers.forEach(observer -> observer.observe(event));
+        observers.forEach(observer -> observer.handle(event));
     }
 
     @Transient
@@ -45,7 +45,7 @@ public class Dispatcher implements Observable {
 
     protected void propagate(Collection<? extends Observable> observables) {
         propagatedObservables.addAll(observables);
-        observables.forEach(observable -> observers.forEach(observer -> observer.observe(observable)));
+        observers.forEach(observer -> observables.forEach(observable -> observable.observe(observer)));
     }
 
     private static class Observer {
@@ -60,7 +60,7 @@ public class Dispatcher implements Observable {
             type = method.getParameterTypes()[0];
         }
 
-        private void observe(Object event) {
+        private void handle(Object event) {
             if (type.isAssignableFrom(event.getClass())) {
                 method.setAccessible(true);
                 try {
