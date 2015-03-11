@@ -39,13 +39,21 @@ public class Dispatcher implements Observable {
     @Transient
     private final List<Observable> propagatedObservables = new ArrayList<>();
 
+    protected void propagate(Observable observable) {
+        if (observable != null) {
+            propagatedObservables.add(observable);
+            observers.forEach(observable::observe);
+        }
+    }
+
     protected void propagate(Observable... observables) {
-        propagate(Arrays.asList(observables));
+        for (Observable observable : observables) {
+            propagate(observable);
+        }
     }
 
     protected void propagate(Collection<? extends Observable> observables) {
-        propagatedObservables.addAll(observables);
-        observers.forEach(observer -> observables.forEach(observable -> observable.observe(observer)));
+        observables.forEach(this::propagate);
     }
 
     private static class Observer {
