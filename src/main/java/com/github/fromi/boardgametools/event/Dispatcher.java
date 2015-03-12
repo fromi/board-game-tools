@@ -1,20 +1,19 @@
 package com.github.fromi.boardgametools.event;
 
-import org.springframework.data.annotation.Transient;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.springframework.data.annotation.Transient;
 
 public class Dispatcher implements Observable {
     @Transient
-    private final List<Observer> observers = new ArrayList<>();
+    private final Set<Observer> observers = new HashSet<>();
 
     @Override
-    public void observe(Object observer) {
+    public void addObserver(Object observer) {
         Method observerMethod = null;
         for (Method method : observer.getClass().getDeclaredMethods()) {
             if (method.getReturnType().equals(Void.TYPE) && method.getParameterCount() == 1) {
@@ -29,20 +28,20 @@ public class Dispatcher implements Observable {
             throw new IllegalArgumentException("Cannot register object, no eligible method found for event handling");
         }
         observers.add(new Observer(observer, observerMethod));
-        propagatedObservables.forEach(observable -> observable.observe(observer));
+        propagatedObservables.forEach(observable -> observable.addObserver(observer));
     }
 
     protected void dispatch(Object event) {
-        observers.forEach(observer -> observer.handle(event));
+        observers.forEach(observer -> observer.observe(event));
     }
 
     @Transient
-    private final List<Observable> propagatedObservables = new ArrayList<>();
+    private final Set<Observable> propagatedObservables = new HashSet<>();
 
     protected void propagate(Observable observable) {
         if (observable != null) {
             propagatedObservables.add(observable);
-            observers.forEach(observable::observe);
+            observers.forEach(observable::addObserver);
         }
     }
 
@@ -68,7 +67,7 @@ public class Dispatcher implements Observable {
             type = method.getParameterTypes()[0];
         }
 
-        private void handle(Object event) {
+        private void observe(Object event) {
             if (type.isAssignableFrom(event.getClass())) {
                 method.setAccessible(true);
                 try {
